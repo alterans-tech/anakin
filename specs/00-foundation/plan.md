@@ -197,12 +197,18 @@ npm --version
 The implementation will produce a single comprehensive guide with these sections:
 
 1. **Overview** - What we're doing, time estimate, requirements
-2. **Phase 1: Preparation (Windows)** - License key, backups, USB creation
-3. **Phase 2: Hardware Testing (Live USB)** - Boot, test checklist, go/no-go
-4. **Phase 3: Installation** - BIOS setup, installation wizard, first boot
-5. **Phase 4: Post-Install** - Updates, Node.js, restore credentials
-6. **Troubleshooting** - Common issues and fixes
-7. **Appendix** - Commands reference, Dell-specific notes
+2. **Phase 0: Create Bootable USB** - Download Ubuntu, create USB (DO THIS FIRST)
+3. **Phase 1: Preparation (Windows)** - License key, backups
+4. **Phase 2: Hardware Testing (Live USB)** - Boot, test checklist, go/no-go
+5. **Phase 3: Installation** - BIOS setup, installation wizard, first boot
+6. **Phase 4: Post-Install** - Updates, Node.js, restore credentials
+7. **Troubleshooting** - Common issues and fixes
+8. **Appendix** - Commands reference, Dell-specific notes
+
+**Execution Order Note**: Phase 0 (USB creation) should be done FIRST because:
+- USB download takes time (~5GB) - start early
+- Can run hardware tests while doing Windows prep
+- Gives early confidence that boot media works
 
 ---
 
