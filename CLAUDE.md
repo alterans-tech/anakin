@@ -12,6 +12,20 @@ Anakin provides setup guides, configuration scripts, and automation for deployin
 
 ---
 
+## Jira
+
+| Key | Value |
+|-----|-------|
+| **Board** | ANI |
+| **Project Key** | ANI |
+
+Use Jira MCP tools to manage tasks:
+- `mcp__atlassian__jira_get_board_issues` - View board issues
+- `mcp__atlassian__jira_create_issue` - Create new tasks
+- `mcp__atlassian__jira_transition_issue` - Update task status
+
+---
+
 ## Project Structure
 
 ```
