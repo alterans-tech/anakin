@@ -1,168 +1,140 @@
-# Feature Specification: Anakin - OpenClaw Setup Assistant
+# Feature Specification: Windows to Ubuntu Migration Guide
 
 **Feature Branch**: `00-foundation`
 **Created**: 2026-02-02
 **Status**: Draft
-**Input**: Automated setup assistant for deploying OpenClaw personal AI assistants on Linux systems
+**Input**: Step-by-step instructions to wipe Windows on Dell laptop, install Ubuntu, verify hardware compatibility before wiping, and preserve Windows license key for potential recovery
 
 ---
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Pre-Migration Credential Backup (Priority: P1)
+### User Story 1 - Preserve Windows License Key (Priority: P1)
 
-A developer with a Windows laptop wants to safely backup all credentials before wiping the system to install Linux. They need confidence that nothing critical will be lost.
+A Dell laptop owner wants to save their Windows license key before wiping the system, in case they ever need to reinstall Windows or for warranty/support purposes.
 
-**Why this priority**: Zero credential loss is a foundational requirement. Without safe backup, users risk losing access to accounts, services, and data permanently. This must work before any destructive action.
+**Why this priority**: Once Windows is wiped, the license key may be difficult to recover. Dell OEM licenses are embedded in BIOS/UEFI firmware, but documenting them provides peace of mind and may be needed for support scenarios.
 
-**Independent Test**: User runs the credential backup wizard on Windows, receives a checklist of items backed up, and can verify the backup is readable on an external drive before proceeding.
+**Independent Test**: User retrieves and documents their Windows product key using provided methods, and can verify the key is valid before proceeding.
 
 **Acceptance Scenarios**:
 
-1. **Given** a Windows system with browser passwords, **When** user runs the credential backup wizard, **Then** all passwords are exported to CSV on the specified external drive
-2. **Given** saved WiFi networks on Windows, **When** user runs the backup wizard, **Then** all WiFi passwords are extracted and documented
-3. **Given** SSH keys in user's .ssh folder, **When** user runs the backup wizard, **Then** all SSH keys are copied to the backup location
-4. **Given** API keys for various services, **When** user runs the backup wizard, **Then** a template is generated prompting user to document each API key location
-5. **Given** 2FA recovery codes stored locally, **When** user runs the backup wizard, **Then** user is prompted to verify and backup each 2FA recovery code
+1. **Given** a Dell laptop running Windows, **When** user runs the license key extraction command, **Then** the Windows product key is displayed and can be saved
+2. **Given** a Dell OEM Windows installation, **When** user checks BIOS-embedded key, **Then** they understand that Dell licenses are tied to hardware and auto-activate on reinstall
+3. **Given** the extracted license key, **When** user saves it to external storage, **Then** key is documented with laptop service tag for future reference
 
 ---
 
-### User Story 2 - Hardware Compatibility Testing (Priority: P1)
+### User Story 2 - Test Hardware on Ubuntu Live USB (Priority: P1)
 
-A developer wants to verify their laptop's hardware works with Linux before wiping Windows. They need to test WiFi, display, audio, touchpad, keyboard, USB, webcam, and Bluetooth in a live USB environment.
+A Dell laptop owner wants to verify that all critical hardware (WiFi, display, audio, touchpad, keyboard) works with Ubuntu BEFORE wiping Windows, to avoid being stuck with a non-functional system.
 
-**Why this priority**: Testing hardware BEFORE destroying Windows prevents catastrophic scenarios where critical hardware (like WiFi) doesn't work, leaving the user with an unusable system.
+**Why this priority**: This is the safety net. If hardware doesn't work, user can abort and keep Windows. Testing first prevents catastrophic data loss scenarios.
 
-**Independent Test**: User boots into live USB, runs the hardware test script, and receives a clear pass/fail report for each component before making any installation decision.
+**Independent Test**: User boots into Ubuntu live USB, runs through hardware verification checklist, and receives clear pass/fail results for each component.
 
 **Acceptance Scenarios**:
 
-1. **Given** a live Ubuntu USB boot, **When** user runs the hardware test script, **Then** WiFi adapter is detected and can connect to a network
-2. **Given** a live Ubuntu USB boot, **When** user runs the hardware test script, **Then** display resolution and brightness controls are verified working
-3. **Given** a live Ubuntu USB boot, **When** user runs the hardware test script, **Then** audio output and input are tested with user confirmation
-4. **Given** a live Ubuntu USB boot, **When** user runs the hardware test script, **Then** touchpad gestures and keyboard function keys are verified
-5. **Given** any hardware component failing, **When** user views the test report, **Then** clear recommendation is shown (proceed, dual-boot, or reconsider)
+1. **Given** a bootable Ubuntu live USB, **When** user boots the Dell laptop from USB, **Then** Ubuntu live environment loads successfully
+2. **Given** Ubuntu live environment running, **When** user tests WiFi, **Then** they can scan for and connect to their home network
+3. **Given** Ubuntu live environment running, **When** user tests display, **Then** resolution is correct and brightness controls work
+4. **Given** Ubuntu live environment running, **When** user tests audio, **Then** speakers and headphone jack produce sound
+5. **Given** Ubuntu live environment running, **When** user tests touchpad and keyboard, **Then** all gestures and function keys work
+6. **Given** any hardware failing, **When** user reviews results, **Then** they receive guidance on whether to proceed, troubleshoot, or abort
 
 ---
 
-### User Story 3 - One-Command OpenClaw Installation (Priority: P1)
+### User Story 3 - Create Bootable Ubuntu USB (Priority: P1)
 
-A developer with a fresh Ubuntu installation wants to install OpenClaw with sensible secure defaults using a single command, without needing to understand all configuration options upfront.
+A Dell laptop owner needs to create a bootable Ubuntu USB drive from their Windows system to use for live testing and installation.
 
-**Why this priority**: This is the core value proposition. If installation is complex, users won't adopt the tool. One-command setup with secure defaults is essential for the "under 3 hours" goal.
+**Why this priority**: Required before any testing or installation can happen. This is the first physical step in the migration process.
 
-**Independent Test**: User runs a single install command on fresh Ubuntu, completes interactive prompts for API key and model selection, and has a working OpenClaw installation with security hardening applied.
+**Independent Test**: User downloads Ubuntu ISO, creates bootable USB, and can successfully boot from it on their Dell laptop.
 
 **Acceptance Scenarios**:
 
-1. **Given** Ubuntu 24.04 with no prerequisites, **When** user runs the install command, **Then** Node.js 22+ is automatically installed if missing
-2. **Given** OpenClaw installation in progress, **When** prompted for API key, **Then** user can paste their Anthropic API key and have it validated
-3. **Given** successful API key entry, **When** installation completes, **Then** OpenClaw gateway is running as a systemd daemon
-4. **Given** installation completes, **When** user runs status check, **Then** security audit passes with all mandatory mitigations applied
-5. **Given** installation completes, **When** user checks file permissions, **Then** ~/.openclaw is 700 and config files are 600
+1. **Given** Windows with internet access, **When** user downloads Ubuntu 24.04 LTS ISO, **Then** the correct ISO file is obtained from official source
+2. **Given** Ubuntu ISO and blank USB drive (8GB+), **When** user runs USB creation tool, **Then** bootable USB is created successfully
+3. **Given** bootable USB, **When** user restarts Dell laptop and presses F12, **Then** USB appears in boot menu
+4. **Given** USB selected in boot menu, **When** laptop boots, **Then** Ubuntu live environment loads
 
 ---
 
-### User Story 4 - Channel Setup Wizard (Priority: P2)
+### User Story 4 - Backup Critical Data Before Wipe (Priority: P1)
 
-A developer wants to connect messaging channels (WhatsApp, Telegram, Discord) to their OpenClaw instance so they can interact with their AI assistant through familiar interfaces.
+A Dell laptop owner wants to ensure all critical data and credentials are backed up to external storage before wiping Windows.
 
-**Why this priority**: While OpenClaw can work without channels, the primary use case involves messaging. However, the base installation is functional without channels, making this P2.
+**Why this priority**: Data loss is irreversible. This must happen before any destructive action.
 
-**Independent Test**: User runs a channel setup wizard, follows prompts for their chosen channel (e.g., WhatsApp QR code scan), and can send a test message that receives an AI response.
+**Independent Test**: User completes backup checklist, verifies backups are readable on external storage, and confirms nothing critical remains only on the laptop.
 
 **Acceptance Scenarios**:
 
-1. **Given** a running OpenClaw gateway, **When** user selects WhatsApp setup, **Then** a QR code is displayed for authentication
-2. **Given** successful WhatsApp authentication, **When** user sends a test message, **Then** OpenClaw responds through WhatsApp
-3. **Given** a running OpenClaw gateway, **When** user selects Telegram setup, **Then** they are guided through bot token creation and configuration
-4. **Given** DM pairing mode enabled, **When** an unknown sender messages the bot, **Then** pairing approval is required before responding
+1. **Given** important files on Windows, **When** user copies to external drive, **Then** files are verified readable on the external drive
+2. **Given** browser with saved passwords, **When** user exports passwords, **Then** CSV file is saved to external storage
+3. **Given** saved WiFi networks, **When** user documents passwords, **Then** WiFi credentials are recorded for re-entry on Ubuntu
+4. **Given** SSH keys or API keys, **When** user backs them up, **Then** keys are copied to external storage
+5. **Given** completed backup, **When** user reviews checklist, **Then** all critical items are confirmed backed up
 
 ---
 
-### User Story 5 - Cost Monitoring Dashboard (Priority: P2)
+### User Story 5 - Install Ubuntu (Wipe Windows) (Priority: P2)
 
-A developer wants to monitor their API usage costs to avoid surprise bills, with alerts when spending exceeds thresholds.
+A Dell laptop owner, having verified hardware compatibility and completed backups, wants to wipe Windows and install Ubuntu as the sole operating system.
 
-**Why this priority**: Cost awareness is critical but not blocking for initial use. Users can start using OpenClaw before setting up monitoring, but should do so within the first week.
+**Why this priority**: P2 because it depends on P1 stories being completed first. This is the point of no return.
 
-**Independent Test**: User views the cost dashboard showing current usage, historical trends, and receives an alert when approaching a configured threshold.
+**Independent Test**: User boots from USB, follows installation wizard, wipes Windows, and has a working Ubuntu installation that boots successfully.
 
 **Acceptance Scenarios**:
 
-1. **Given** OpenClaw with API usage, **When** user runs status dashboard, **Then** current day/week/month token usage and estimated cost is displayed
-2. **Given** configured cost threshold, **When** usage approaches 80% of threshold, **Then** user receives a warning notification
-3. **Given** historical usage data, **When** user views dashboard, **Then** trend graph shows daily costs for the past 30 days
-4. **Given** different model usage, **When** user views breakdown, **Then** costs are separated by model tier (Haiku/Sonnet/Opus)
+1. **Given** hardware tests passed and backups complete, **When** user boots from Ubuntu USB, **Then** installation wizard starts
+2. **Given** installation wizard, **When** user selects "Erase disk and install Ubuntu", **Then** they understand this will delete all Windows data
+3. **Given** installation in progress, **When** partitioning completes, **Then** Ubuntu files are copied to disk
+4. **Given** installation complete, **When** user removes USB and restarts, **Then** Ubuntu boots successfully
+5. **Given** fresh Ubuntu installation, **When** user logs in, **Then** desktop environment is functional
 
 ---
 
-### User Story 6 - Security Hardening Verification (Priority: P2)
+### User Story 6 - Post-Install Setup (Priority: P2)
 
-A developer wants to verify their OpenClaw installation meets security best practices and fix any issues found automatically.
+A Dell laptop owner with fresh Ubuntu installation wants to complete essential post-installation tasks to have a fully functional system ready for Moltbot.
 
-**Why this priority**: Security is applied by default during installation, but users need ongoing verification. This enables periodic audits and remediation.
+**Why this priority**: Required to prepare the system for Moltbot, but not blocking the core installation.
 
-**Independent Test**: User runs security audit command, sees a report of all security controls and their status, and can auto-fix any issues found.
-
-**Acceptance Scenarios**:
-
-1. **Given** an OpenClaw installation, **When** user runs security audit, **Then** a report shows status of each OCSAS L1 control
-2. **Given** sandbox mode disabled, **When** user runs security audit, **Then** it's flagged as a critical finding with fix command provided
-3. **Given** security issues found, **When** user runs audit with --fix flag, **Then** all auto-fixable issues are remediated
-4. **Given** issues requiring manual intervention, **When** user views audit report, **Then** clear instructions are provided for each manual fix
-
----
-
-### User Story 7 - Skill Installation (Priority: P3)
-
-A developer wants to extend OpenClaw's capabilities by installing skills from ClawHub (e.g., Obsidian, GitHub, Calendar integration).
-
-**Why this priority**: Skills enhance OpenClaw but aren't required for basic functionality. Users can have a working assistant without any skills installed.
-
-**Independent Test**: User browses available skills, installs one (e.g., Obsidian), and can use the new capability through their connected channel.
+**Independent Test**: User completes post-install checklist and has a fully updated Ubuntu system with Node.js 22+ installed.
 
 **Acceptance Scenarios**:
 
-1. **Given** ClawHub access, **When** user runs skill browser, **Then** list of available skills with descriptions and ratings is shown
-2. **Given** a selected skill, **When** user initiates install, **Then** skill source is shown for review before installation
-3. **Given** skill installation, **When** user checks status, **Then** skill is listed as active and its capabilities are documented
-4. **Given** a known malicious skill, **When** user attempts install, **Then** warning is displayed citing known security issues
-
----
-
-### User Story 8 - Backup and Restore (Priority: P3)
-
-A developer wants to backup their OpenClaw configuration so they can restore it on a new system or recover from issues.
-
-**Why this priority**: Important for data safety but not blocking for initial use. Users typically need this after they've customized their setup.
-
-**Independent Test**: User creates a backup, can view its contents, and successfully restores to a fresh OpenClaw installation.
-
-**Acceptance Scenarios**:
-
-1. **Given** a configured OpenClaw installation, **When** user runs backup command, **Then** configuration, skills, and memory are archived
-2. **Given** a backup archive, **When** user runs restore on fresh install, **Then** all settings and data are restored
-3. **Given** sensitive data in backup, **When** backup is created, **Then** user is warned about securing the backup file
+1. **Given** fresh Ubuntu installation, **When** user runs system updates, **Then** all packages are updated to latest versions
+2. **Given** updated Ubuntu, **When** user installs Node.js 22+, **Then** `node --version` shows v22.x.x
+3. **Given** WiFi credentials from backup, **When** user connects to WiFi, **Then** internet access is restored
+4. **Given** backed up SSH keys, **When** user restores them, **Then** SSH authentication works as before
 
 ---
 
 ### Edge Cases
 
-- What happens when the user's laptop has no WiFi driver support in live USB?
-  - Display clear warning and suggest USB WiFi adapter or ethernet
-- What happens when the user's Anthropic API key is invalid?
-  - Validate on entry, provide clear error, allow retry without restarting install
-- What happens when OpenClaw installation fails midway?
-  - Scripts are idempotent; re-running continues from failure point
-- What happens when gateway port is already in use?
-  - Detect conflict, offer alternative port, or help identify conflicting process
-- What happens when user loses internet during installation?
-  - Cache downloaded components where possible; resume on reconnection
-- What happens when channel authentication expires?
-  - Notify user, provide re-authentication steps
-- What happens when disk space is insufficient?
-  - Check before installation, provide clear minimum requirements
+- What happens if WiFi doesn't work in Ubuntu live environment?
+  - Try ethernet cable if available, or USB WiFi adapter
+  - Check if proprietary drivers are needed (common for Broadcom)
+  - If no workaround, consider dual-boot or abort migration
+- What happens if Dell BIOS doesn't show USB boot option?
+  - Disable Secure Boot in BIOS settings
+  - Enable Legacy Boot / CSM if needed
+  - Ensure USB is properly formatted as bootable
+- What happens if Windows license key extraction fails?
+  - Dell OEM keys are embedded in UEFI firmware
+  - Windows will auto-activate on same hardware without key
+  - Document Dell Service Tag as alternative recovery path
+- What happens if installation fails midway?
+  - Boot from USB again and retry installation
+  - If disk errors, run disk check from live environment
+- What happens if Ubuntu won't boot after installation?
+  - Boot from USB, use "Try Ubuntu" to access installed system
+  - Check GRUB bootloader installation
+  - May need to repair bootloader
 
 ---
 
@@ -170,84 +142,61 @@ A developer wants to backup their OpenClaw configuration so they can restore it 
 
 ### Functional Requirements
 
-**Pre-Migration (Windows)**
+**Windows License Preservation**
 
-- **FR-001**: System MUST export browser passwords to CSV format on user-specified external storage
-- **FR-002**: System MUST extract and document all saved WiFi passwords
-- **FR-003**: System MUST copy SSH keys and provide verification of successful copy
-- **FR-004**: System MUST generate a pre-migration checklist tracking all credential categories
-- **FR-005**: System MUST support creating bootable Ubuntu USB drives
+- **FR-001**: Guide MUST explain how to extract Windows product key using built-in commands
+- **FR-002**: Guide MUST explain Dell OEM licensing (keys embedded in BIOS, auto-activate on same hardware)
+- **FR-003**: Guide MUST recommend saving license key with Dell Service Tag to external storage
+
+**Bootable USB Creation**
+
+- **FR-004**: Guide MUST provide official Ubuntu 24.04 LTS download link
+- **FR-005**: Guide MUST explain how to verify ISO integrity (checksum)
+- **FR-006**: Guide MUST provide step-by-step instructions for creating bootable USB on Windows
+- **FR-007**: Guide MUST explain how to access Dell boot menu (F12 at startup)
 
 **Hardware Testing**
 
-- **FR-006**: System MUST test WiFi adapter detection and connectivity in live USB environment
-- **FR-007**: System MUST verify display functionality including resolution and brightness controls
-- **FR-008**: System MUST test audio input/output with user confirmation
-- **FR-009**: System MUST verify touchpad, keyboard function keys, and special keys
-- **FR-010**: System MUST generate a hardware compatibility report with pass/fail for each component
-- **FR-011**: System MUST provide clear recommendations based on test results (proceed/dual-boot/reconsider)
+- **FR-008**: Guide MUST provide checklist of hardware components to test in live environment
+- **FR-009**: Guide MUST explain how to test WiFi connectivity
+- **FR-010**: Guide MUST explain how to test display (resolution, brightness)
+- **FR-011**: Guide MUST explain how to test audio (speakers, headphones)
+- **FR-012**: Guide MUST explain how to test touchpad and keyboard function keys
+- **FR-013**: Guide MUST provide clear go/no-go criteria based on test results
 
-**OpenClaw Installation**
+**Data Backup**
 
-- **FR-012**: System MUST install Node.js 22+ if not present
-- **FR-013**: System MUST install OpenClaw with a single command
-- **FR-014**: System MUST prompt for and validate API key during setup
-- **FR-015**: System MUST configure OpenClaw gateway with secure defaults (loopback binding, sandbox mode)
-- **FR-016**: System MUST set file permissions to 700 for ~/.openclaw directory and 600 for config files
-- **FR-017**: System MUST install and enable OpenClaw as a systemd service
-- **FR-018**: System MUST apply all OCSAS L1 security controls by default
+- **FR-014**: Guide MUST provide pre-migration backup checklist
+- **FR-015**: Guide MUST explain how to export browser passwords
+- **FR-016**: Guide MUST explain how to find/document WiFi passwords
+- **FR-017**: Guide MUST explain how to backup SSH keys and important files
+- **FR-018**: Guide MUST emphasize verifying backups before proceeding
 
-**Channel Management**
+**Ubuntu Installation**
 
-- **FR-019**: System MUST provide guided setup for WhatsApp channel including QR code display
-- **FR-020**: System MUST provide guided setup for Telegram channel including bot token configuration
-- **FR-021**: System MUST enable DM pairing mode by default requiring approval for unknown senders
-- **FR-022**: System MUST verify channel connectivity with test message capability
+- **FR-019**: Guide MUST explain BIOS settings needed for Ubuntu (Secure Boot, boot order)
+- **FR-020**: Guide MUST provide step-by-step installation wizard walkthrough
+- **FR-021**: Guide MUST clearly explain "Erase disk" option consequences
+- **FR-022**: Guide MUST explain disk partitioning options (default recommended for beginners)
+- **FR-023**: Guide MUST explain what to do when prompted to remove USB and restart
 
-**Security**
+**Post-Installation**
 
-- **FR-023**: System MUST run comprehensive security audit on demand
-- **FR-024**: System MUST auto-remediate fixable security issues when requested
-- **FR-025**: System MUST warn about manual intervention items with clear instructions
-- **FR-026**: System MUST prevent installation of known malicious skills
-
-**Monitoring**
-
-- **FR-027**: System MUST display current API usage and estimated costs
-- **FR-028**: System MUST track historical usage with daily granularity
-- **FR-029**: System MUST support configurable cost threshold alerts
-- **FR-030**: System MUST break down costs by model tier
-
-**Skills**
-
-- **FR-031**: System MUST browse and display available skills from ClawHub
-- **FR-032**: System MUST show skill source code for review before installation
-- **FR-033**: System MUST track installed skills and their status
-
-**Management**
-
-- **FR-034**: System MUST backup OpenClaw configuration, skills, and memory
-- **FR-035**: System MUST restore from backup to fresh installation
-- **FR-036**: System MUST check OpenClaw health including connectivity, auth, and disk space
-
-**Cross-Cutting**
-
-- **FR-037**: All scripts MUST be idempotent (safe to re-run without side effects)
-- **FR-038**: All scripts MUST provide clear progress indicators for long operations
-- **FR-039**: All scripts MUST output clear success/failure messages
-- **FR-040**: All operations MUST NOT block the entire workflow on partial failures
+- **FR-024**: Guide MUST provide commands for system update
+- **FR-025**: Guide MUST provide commands for installing Node.js 22+
+- **FR-026**: Guide MUST explain how to restore WiFi connection
+- **FR-027**: Guide MUST explain how to restore SSH keys
+- **FR-028**: Guide MUST confirm system is ready for Moltbot installation
 
 ---
 
 ### Key Entities
 
-- **Credential Set**: Collection of backed-up credentials (browser passwords, WiFi passwords, SSH keys, API keys, 2FA codes) with backup timestamp and verification status
-- **Hardware Report**: Test results for each hardware component (WiFi, display, audio, touchpad, keyboard, USB, webcam, Bluetooth) with status and recommendations
-- **OpenClaw Installation**: Configuration state including gateway settings, security controls, connected channels, installed skills, and API configuration
-- **Channel**: Connected messaging platform (WhatsApp, Telegram, Discord) with authentication status and pairing mode settings
-- **Skill**: Installed capability from ClawHub with source, status, and security review state
-- **Usage Record**: API usage data including token counts, model tier, timestamp, and calculated cost
-- **Backup Archive**: Snapshot of OpenClaw configuration, skills, and memory with creation timestamp
+- **Windows License**: Product key, Dell Service Tag, OEM activation status
+- **Bootable USB**: Ubuntu ISO version, USB creation tool used, boot verification status
+- **Hardware Test Results**: Component name, test method, pass/fail status, notes
+- **Backup Checklist**: Item category, backup location, verification status
+- **Ubuntu Installation**: Version, partition scheme, installation outcome
 
 ---
 
@@ -255,47 +204,42 @@ A developer wants to backup their OpenClaw configuration so they can restore it 
 
 ### Measurable Outcomes
 
-- **SC-001**: Users complete the entire journey from Windows laptop to working OpenClaw in under 3 hours
-- **SC-002**: 100% of installations have all OCSAS L1 security controls applied by default
-- **SC-003**: Zero credential loss during migration when using the backup wizard
-- **SC-004**: Hardware compatibility issues are detected before Windows is wiped in 100% of cases
-- **SC-005**: Users understand their expected monthly API cost within the first week of use
-- **SC-006**: Installation script successfully completes on first run in 95% of cases (no manual intervention)
-- **SC-007**: At least one messaging channel can be connected within 15 minutes of installation completion
-- **SC-008**: Security audit identifies and provides fix commands for 100% of auto-remediable issues
-- **SC-009**: All scripts can be safely re-run without causing errors or unintended state changes
-- **SC-010**: Partial failures (e.g., one channel failing) do not block other functionality from working
+- **SC-001**: User can retrieve and document Windows license key before any destructive action
+- **SC-002**: User can create bootable Ubuntu USB and successfully boot from it on first attempt
+- **SC-003**: All critical hardware (WiFi, display, audio, input devices) is tested before Windows is wiped
+- **SC-004**: Zero data loss - all critical files and credentials are backed up and verified readable
+- **SC-005**: User completes full migration from Windows to Ubuntu in under 2 hours (excluding download times)
+- **SC-006**: Ubuntu boots successfully after installation with no manual bootloader repair needed
+- **SC-007**: System is ready for Moltbot with Node.js 22+ installed and verified
 
 ---
 
 ## Assumptions
 
-1. **Target Hardware**: 2018 or newer laptops with Intel/AMD processors; exotic hardware may require manual driver installation
-2. **Network Availability**: Reliable internet connection available during installation; offline mode covers configuration preparation only
-3. **User Skill Level**: Users can follow CLI instructions, boot from USB, and navigate BIOS menus with visual guidance
-4. **API Provider**: Anthropic is the recommended and default API provider; other providers may work but are not explicitly supported
-5. **Ubuntu Version**: Primary support for Ubuntu 24.04 LTS; other Debian-based distributions may work but are not tested
-6. **Browser Support**: Credential export supports Chromium-based browsers and Firefox; other browsers may require manual export
-7. **External Storage**: Users have access to USB drive or external storage for credential backup
-8. **Cost Ranges**: API costs are based on current Anthropic pricing; actual costs may vary with pricing changes
+1. **Dell Laptop Model**: 2018 or newer Dell laptop with Intel/AMD processor (no ARM/Qualcomm)
+2. **Current OS**: Windows 10 or Windows 11 with valid license
+3. **USB Drive**: User has access to USB drive 8GB or larger
+4. **External Storage**: User has external storage for backups (USB drive, external HDD, or cloud)
+5. **Internet**: Reliable internet for downloading Ubuntu ISO (~5GB)
+6. **BIOS Access**: User can access Dell BIOS with F2 and boot menu with F12
+7. **Target Ubuntu**: Ubuntu 24.04 LTS (current LTS release)
 
 ---
 
 ## Dependencies
 
-1. **OpenClaw**: Upstream OpenClaw project must remain available and maintain current installation method
-2. **ClawHub**: Skill marketplace availability for skill browsing and installation features
-3. **Ubuntu Repositories**: Standard package availability for Node.js and dependencies
-4. **Anthropic API**: API availability and key validation endpoints
+1. **Ubuntu ISO**: Official Ubuntu 24.04 LTS ISO must be available from ubuntu.com
+2. **USB Creation Tool**: Rufus or Balena Etcher available for Windows
+3. **Dell BIOS**: Standard Dell BIOS/UEFI with accessible boot menu
+4. **Hardware Drivers**: Ubuntu kernel must include drivers for Dell laptop hardware (or drivers available via Additional Drivers)
 
 ---
 
 ## Out of Scope
 
-- Windows-native OpenClaw setup (WSL-only mentioned in upstream docs)
-- macOS setup (separate project)
-- Enterprise/multi-tenant deployment
-- Custom AI model training
-- Building or modifying OpenClaw itself (we configure, not develop)
-- Support for non-Debian-based Linux distributions
-- Graphical user interface (CLI-first approach)
+- Dual-boot setup (keeping Windows alongside Ubuntu)
+- Data recovery after wipe
+- Troubleshooting exotic hardware failures
+- Moltbot installation (separate guide)
+- Windows reinstallation procedures
+- Corporate/enterprise Dell deployments with BitLocker or domain policies
