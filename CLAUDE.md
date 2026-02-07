@@ -104,6 +104,21 @@ This project follows the Uatu framework. Before starting work:
 
 ---
 
+## OpenClaw Patches
+
+After every `npm install -g openclaw@latest`, re-apply patches and restart:
+
+```bash
+./scripts/patch-openclaw-tts.sh
+systemctl --user restart openclaw-gateway.service
+```
+
+| Patch | Script | Guide |
+|-------|--------|-------|
+| TTS voice note delivery (MEDIA: /tmp/ path fix) | `scripts/patch-openclaw-tts.sh` | `guides/openclaw-tts-patch.md` |
+
+---
+
 ## important-instruction-reminders
 
 - Do what has been asked; nothing more, nothing less

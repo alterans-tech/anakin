@@ -43,19 +43,25 @@
 | Heartbeat (30m) | gpt-4o-mini | $0.15 / $0.60 |
 | Sub-agents | claude-haiku-4-5 | $1 / $5 |
 
-6 model aliases configured: opus, opus45, sonnet, haiku, gpt4o, mini
+9 model aliases configured: opus, opus45, sonnet, haiku, gpt4o, mini, gem25pro, gem25flash, flashlite
 
-**Future optimization** (even cheaper options to consider adding):
-| Model | Cost (input/output per MTok) | Best For |
-|-------|------------------------------|----------|
-| Gemini 2.5 Flash-Lite | $0.10 / $0.40 | Cheapest mainstream, heartbeats |
-| DeepSeek V3.1 Chat | $0.15 / $0.75 | Budget sub-agents, classification |
-| DeepSeek R1 Reasoner | $0.55 / $2.19 | Strong reasoning at 90% less than Opus |
-| OpenRouter Auto | Varies | Auto-picks cheapest capable model |
+**Fallback chain** (alternates providers to avoid shared rate limits):
+Sonnet → GPT-4o → Gemini 2.5 Flash → Haiku
 
-To add these, get API keys from deepseek.com and ai.google.dev, then add as providers
-in `openclaw.json` under a `models.providers` section (see model routing research).
-Budget limits: `openclaw config set daily_budget_usd 5.00` / `monthly_budget_usd 50.00`
+**Context management applied:**
+- Context pruning: `cache-ttl` mode with 1h TTL (auto-trims old tool results)
+- Compaction: `safeguard` mode with memory flush enabled
+- Context budget: 200,000 tokens (triggers compaction before hitting model limits)
+- Reserve floor: 24,000 tokens headroom
+
+**Providers needing API keys** (to unlock Gemini fallback + more options):
+| Provider | Get Key At | Models | Best For |
+|----------|------------|--------|----------|
+| Google Gemini | ai.google.dev | gem25pro (1M ctx), gem25flash, flashlite | Huge context, cheap fallback |
+| DeepSeek | deepseek.com | deepseek-chat, deepseek-reasoner | Ultra-cheap sub-agents |
+| OpenRouter | openrouter.ai | auto (routes to cheapest) | Catch-all fallback |
+
+Setup: `openclaw models auth login --provider google-gemini-cli` (or set GEMINI_API_KEY)
 Mid-session switching: `/model opus` to escalate, `/model haiku` for simple tasks
 
 ### 5. Voice Capabilities Enabled
