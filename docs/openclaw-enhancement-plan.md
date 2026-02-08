@@ -1,7 +1,7 @@
 # OpenClaw Enhancement Plan
 
 > **This document persists across sessions.** Re-read after every compaction.
-> Last updated: 2026-02-07
+> Last updated: 2026-02-08
 
 ---
 
@@ -11,8 +11,9 @@
 2. [Local Model Training & Offline Learning](#local-model-training--offline-learning)
 3. [Video Avatar Calls](#video-avatar-calls)
 4. [Smart Home Integration](#smart-home-integration)
-5. [Productivity Skills](#productivity-skills)
-6. [Manual Setup Instructions](#manual-setup-instructions)
+5. [Multi-Agenda Management](#multi-agenda-management)
+6. [Productivity Skills](#productivity-skills)
+7. [Manual Setup Instructions](#manual-setup-instructions)
 
 ---
 
@@ -429,49 +430,22 @@ pip install thinqconnect
 
 **PAT URL**: https://connect-pat.lgthinq.com (simpler than the developer portal)
 
-### Google Calendar (Family Calendar)
+### Google Calendar
 
-**Skill**: `gog` (bundled with OpenClaw, requires CLI binary)
+**Skill**: `gog` (bundled) + `gog-calendar` (ClawHub, calendar-specific optimizations)
+**Detailed guide**: `guides/gog-calendar-setup.md`
 
-**Install gog CLI**:
+**Install gog CLI** (Linux binary, no Homebrew needed):
 ```bash
-# Homebrew (recommended)
-brew tap steipete/tap && brew install gogcli
-
-# Or download binary from https://gogcli.sh
+curl -sL https://github.com/steipete/gogcli/releases/download/v0.9.0/gogcli_0.9.0_linux_amd64.tar.gz | tar xz
+sudo mv gog /usr/local/bin/gog
 ```
 
-**Setup Google OAuth**:
-1. Go to https://console.cloud.google.com
-2. Create a new project (or use existing)
-3. Enable Gmail API, Calendar API, Drive API
-4. Create OAuth 2.0 credentials (Desktop app)
-5. Download `client_secret.json`
+**Setup**: Google Cloud project → enable Calendar API → OAuth Desktop credentials → `gog auth credentials` → `gog auth add`
 
-**Configure gog**:
-```bash
-gog auth credentials /path/to/client_secret.json
-gog auth add your@gmail.com --services gmail,calendar,drive,contacts
-gog auth list  # Verify
-```
+**Multi-agenda support**: All calendars shared with your Google account (personal, family, work, subscribed ICS feeds) are automatically accessible. See [Multi-Agenda Management](#multi-agenda-management) section and `guides/gog-calendar-setup.md` for full details.
 
-**Example calendar commands**:
-```bash
-# List today's events
-gog calendar events primary --from $(date -I) --to $(date -I -d '+1 day')
-
-# Create event
-gog calendar create primary --summary "Family Dinner" \
-  --from "2026-02-08T19:00:00" --to "2026-02-08T21:00:00"
-
-# List shared calendars
-gog calendar list
-```
-
-**Set default account**:
-```bash
-export GOG_ACCOUNT=your@gmail.com
-```
+**Env vars for systemd**: `GOG_ACCOUNT`, `GOG_KEYRING_PASSWORD`
 
 ### Home Assistant (Optional Unified Hub)
 
@@ -488,6 +462,79 @@ docker run -d --name homeassistant \
 ```
 
 Then use `ha-mcp` to connect OpenClaw → Home Assistant → all devices.
+
+---
+
+## Multi-Agenda Management
+
+### Goal
+Enable Anakin to manage multiple calendars/agendas from a single interface, with proactive reminders, cross-calendar conflict detection, and natural-language scheduling via Telegram.
+
+### Detailed Guide
+See `guides/gog-calendar-setup.md` for full step-by-step setup instructions.
+
+### Architecture
+```
+Google Calendar (hub)
+├── Personal calendar (owned)
+├── Family calendar (shared)
+├── Work calendar (shared or separate account)
+├── School / sports / external (ICS subscriptions)
+└── Any CalDAV source (iCloud, Nextcloud → subscribed as ICS)
+       ↓
+   gog CLI (v0.9.0)
+       ↓
+   OpenClaw (gog + gog-calendar skills)
+       ↓
+   ┌────────────────────────────────┐
+   │  Cron Jobs (proactive)        │
+   │  ├── Morning briefing (7 AM)  │
+   │  ├── Meeting reminders (15m)  │
+   │  └── Weekly review (Sun 8 PM) │
+   └────────────────────────────────┘
+       ↓
+   Telegram / WhatsApp notifications
+```
+
+### How Agendas Are Shared with Anakin
+| Source | Method |
+|--------|--------|
+| Your own Google calendars | Automatic after OAuth |
+| Family/team shared calendars | Share with your Google account → appears automatically |
+| External calendars (school, sports) | Subscribe via ICS URL in Google Calendar |
+| iCloud / Outlook / Nextcloud | Subscribe as ICS in Google Calendar, or use `caldav-calendar` ClawHub skill |
+| Multiple Google accounts | `gog auth add` each account separately |
+
+### Capabilities
+| Feature | How |
+|---------|-----|
+| List today's events | `gog calendar events --all --from ... --to ... --plain` |
+| Create events | `gog calendar create <calendarId> --summary "..." --from ... --to ...` |
+| Update/move events | `gog calendar update <calendarId> <eventId> --from ... --to ...` |
+| Cross-calendar conflicts | Query all calendars for overlapping time ranges |
+| Morning briefing | Cron job at 7:00 AM → Telegram summary |
+| Pre-meeting reminders | Cron job every 15 min → Telegram alert if event within 20 min |
+| Weekly planning | Cron job Sunday 8 PM → week-ahead summary |
+
+### Setup Summary (Manual Steps)
+1. Download `gog` binary → `/usr/local/bin/gog`
+2. Create Google Cloud project → enable Calendar API → OAuth Desktop credentials
+3. `gog auth credentials ~/.config/gogcli/credentials.json`
+4. `gog auth add you@gmail.com --services calendar`
+5. Add `GOG_ACCOUNT` + `GOG_KEYRING_PASSWORD` to systemd unit
+6. `clawhub install gog-calendar`
+7. Set up cron jobs (morning briefing, meeting reminders, weekly review)
+8. Restart gateway
+
+### Alternative/Complementary Integrations
+| Tool | Best For | Status |
+|------|----------|--------|
+| `gog-calendar` (ClawHub) | Calendar-specific optimizations over bundled `gog` | Available, not installed |
+| `gcalcli-calendar` (ClawHub) | Alternative Google Calendar CLI (Python-based) | Available |
+| `caldav-calendar` (ClawHub) | Direct iCloud/Nextcloud/Fastmail CalDAV access | Available |
+| `clippy` (ClawHub) | Microsoft 365 / Outlook calendar | Available |
+| Notion (installed) | Task-based agendas, project deadlines | Installed, needs API key |
+| Trello (installed) | Kanban boards with due dates | Installed, needs API key |
 
 ---
 
@@ -618,25 +665,36 @@ openhue discover
 openhue setup
 ```
 
-### Priority 6: Google Calendar (gog CLI)
+### Priority 6: Google Calendar + Multi-Agenda (gog CLI)
+
+**Full guide**: `guides/gog-calendar-setup.md`
 
 ```bash
-# Download gog binary
-# Check https://gogcli.sh for latest release URL
-# Or if brew is available:
-brew tap steipete/tap && brew install gogcli
+# 1. Download gog binary
+curl -sL https://github.com/steipete/gogcli/releases/download/v0.9.0/gogcli_0.9.0_linux_amd64.tar.gz | tar xz
+sudo mv gog /usr/local/bin/gog
+
+# 2. Create Google Cloud project → enable Calendar API → OAuth Desktop credentials
+#    See guides/gog-calendar-setup.md Steps 2-3 for detailed walkthrough
+
+# 3. Authenticate
+gog auth credentials ~/.config/gogcli/credentials.json
+gog auth add you@gmail.com --services calendar
+
+# 4. Add env vars to systemd unit
+#    GOG_ACCOUNT=you@gmail.com
+#    GOG_KEYRING_PASSWORD=your-password
+systemctl --user daemon-reload && systemctl --user restart openclaw-gateway
+
+# 5. Install calendar-optimized skill
+clawhub install gog-calendar
+systemctl --user restart openclaw-gateway
+
+# 6. Set up cron jobs (morning briefing, meeting reminders, weekly review)
+#    See guides/gog-calendar-setup.md Step 8 for exact commands
 ```
 
-Then:
-1. Create Google Cloud project at https://console.cloud.google.com
-2. Enable Calendar API and Gmail API
-3. Create OAuth credentials (Desktop app)
-4. Download `client_secret.json`
-5. Run:
-   ```bash
-   gog auth credentials ~/Downloads/client_secret.json
-   gog auth add your@gmail.com --services gmail,calendar,drive,contacts
-   ```
+After setup, share agendas with Anakin by sharing calendars with your Google account or subscribing to external ICS feeds in Google Calendar.
 
 ### Priority 7: LG ThinQ AC
 

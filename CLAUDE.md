@@ -215,6 +215,7 @@ Multi-calendar management via `gog` CLI (gogcli). Manages personal, shared, fami
 | Tuning | Guide | Key Settings |
 |--------|-------|-------------|
 | Rate limit & context optimization | `guides/openclaw-rate-limit-tuning.md` | `contextTokens: 80000`, `maxConcurrent: 2`, tighter pruning thresholds |
+| API cost optimization | `guides/cost-optimization.md` | Gemini Flash primary, Ollama local fallback, OAuth for Claude Code |
 
 **Do not use** `adaptive` or `aggressive` for `contextPruning.mode` — only `off` or `cache-ttl` are valid (others crash the gateway).
 
