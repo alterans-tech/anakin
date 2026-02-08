@@ -30,7 +30,19 @@ This makes all Claude Code usage $0 incremental cost.
 
 ## OpenClaw Model Routing (Cost Tiers)
 
-### Recommended Model Chain
+### Current Model Chain (Live)
+
+```
+Primary:    anthropic/claude-sonnet-4-5    (paid API)
+Fallback 1: openai/gpt-4o                 (paid API)
+Fallback 2: google/gemini-2.5-flash       (needs API key)
+Fallback 3: anthropic/claude-haiku-4-5    (paid API)
+Fallback 4: ollama/qwen3:4b              (FREE, local, offline)
+Heartbeat:  openai/gpt-4o-mini            (paid API)
+Sub-agents: anthropic/claude-haiku-4-5    (paid API)
+```
+
+### Target Model Chain (After Gemini Key)
 
 ```
 Primary:    google/gemini-2.5-flash        (free tier: 15 RPM, 1M TPM)
@@ -85,43 +97,41 @@ Sub-agents: ollama/qwen3:4b               (free, ~5-10 tok/s on CPU)
 
 ## Ollama Setup (Local Inference)
 
-### Hardware Requirements
+**Status: Installed and running** (v0.15.6, system service)
 
-| Spec | Minimum | This System |
-|---|---|---|
-| RAM | 8 GB free | ~8 GB free (16 GB total) |
-| CPU | 4+ cores | i7-10510U (4c/8t) |
-| GPU | Optional (MX230 too small) | CPU-only inference |
+### Hardware
 
-### Install
+| Spec | Value |
+|---|---|
+| CPU | i7-10510U (4c/8t) |
+| RAM | 16 GB (8 GB free) |
+| GPU | NVIDIA MX230 (2 GB VRAM — too small for inference, CPU-only) |
+| Ollama service | `systemctl status ollama` |
 
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-```
+### Installed Models
 
-### Recommended Models
+| Model | Size | Quantization | Context | Role |
+|---|---|---|---|---|
+| `qwen3:4b` | 2.5 GB | Q4_K_M | 125k | Fallback #4, alias `qwen` |
 
-| Model | Size | Speed (CPU) | Use Case |
-|---|---|---|---|
-| `qwen3:4b` | ~2.5 GB | ~10-15 tok/s | Heartbeat, simple sub-agents |
-| `qwen2.5-coder:7b` | ~4.5 GB | ~5-10 tok/s | Code tasks |
-| `llama3.3:8b` | ~4.7 GB | ~5-8 tok/s | General chat fallback |
+### Adding More Models
 
 ```bash
-ollama pull qwen3:4b
+ollama pull qwen2.5-coder:7b   # Code tasks (~4.5 GB)
+ollama pull llama3.3:8b         # General chat (~4.7 GB)
 ```
 
-### OpenClaw Integration
+### OpenClaw Integration (Done)
 
-Add to systemd environment (`~/.config/systemd/user/openclaw-gateway.service`):
+Systemd env (`~/.config/systemd/user/openclaw-gateway.service`):
 
 ```ini
 Environment="OLLAMA_API_KEY=ollama-local"
 ```
 
-OpenClaw auto-discovers tool-capable Ollama models. No explicit provider config needed.
+OpenClaw auto-discovers tool-capable Ollama models. Streaming is disabled for Ollama (prevents garbled tool-use responses).
 
-The `ollama-local` ClawHub skill (already installed) provides model management commands through the bot.
+The `ollama-local` ClawHub skill (installed v1.1.0) provides model management commands through the Telegram bot.
 
 ---
 
@@ -160,25 +170,27 @@ Then restart: `systemctl --user restart openclaw-gateway`
 
 ---
 
-## Cleanup Actions
+## Cleanup Actions (All Done)
 
-### Disable Unused Plugins
+### Disabled WhatsApp Plugin
 
-WhatsApp plugin (not linked, generates fetch errors every ~10s):
+Was not linked, generating `TypeError: fetch failed` every ~10s in logs.
 
 ```json
 // In openclaw.json > plugins.entries
 "whatsapp": { "enabled": false }
 ```
 
-### Remove Stale Cron Jobs
+### Disabled Stale Cron Job
+
+"Claude Code monitor - voice recognition research" ran every 60s but always skipped (empty heartbeat file).
 
 ```json
-// In ~/.openclaw/cron/jobs.json - set enabled: false
+// In ~/.openclaw/cron/jobs.json
 "enabled": false
 ```
 
-### Re-index Memory
+### Re-indexed Memory
 
 ```bash
 openclaw memory index
