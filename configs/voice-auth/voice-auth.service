@@ -1,0 +1,14 @@
+[Unit]
+Description=Voice Auth Speaker Verification Service (SpeechBrain ECAPA-TDNN)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/anakin/Workspace/alterans/anakin/configs/voice-auth
+ExecStart=/home/anakin/Workspace/alterans/anakin/configs/voice-auth/.venv/bin/python -m uvicorn speaker_service:app --host 127.0.0.1 --port 8200
+Restart=on-failure
+RestartSec=5
+Environment=VOICE_AUTH_THRESHOLD=0.25
+
+[Install]
+WantedBy=default.target
