@@ -1,0 +1,17 @@
+[Unit]
+Description=Personal RAG Service (ChromaDB + Ollama nomic-embed-text + qwen3:4b)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/anakin/Workspace/alterans/anakin/configs/personal-rag
+ExecStart=/home/anakin/Workspace/alterans/anakin/configs/personal-rag/.venv/bin/python -m uvicorn rag_service:app --host 127.0.0.1 --port 8300
+Restart=on-failure
+RestartSec=5
+Environment=OLLAMA_HOST=http://localhost:11434
+Environment=EMBED_MODEL=nomic-embed-text
+Environment=CHAT_MODEL=qwen3:4b
+Environment=RAG_TOP_K=5
+
+[Install]
+WantedBy=default.target

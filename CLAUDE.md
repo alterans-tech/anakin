@@ -21,6 +21,7 @@ Anakin provides setup guides, configuration scripts, and automation for deployin
 | **OpenClaw Gateway** | 18789 | Running | `openclaw-gateway.service` |
 | **AIAvatarKit** | 8100 | Running | `aiavatarkit` |
 | **Voice Auth** | 8200 | Running (0 speakers enrolled) | `voice-auth` |
+| **Personal RAG** | 8300 | Running (78 docs indexed) | `personal-rag` |
 | **Voice-call Plugin** | 3334 | Running (needs Twilio/Telnyx for calls) | via OpenClaw |
 
 ### Done
@@ -40,14 +41,16 @@ Anakin provides setup guides, configuration scripts, and automation for deployin
 | **IPv6 DNS fix** | `NODE_OPTIONS=--dns-result-order=ipv4first` in systemd env |
 | **AIAvatarKit** | Browser avatar on :8100, Claude + OpenAI TTS/STT + Silero VAD |
 | **Voice Auth service** | SpeechBrain ECAPA-TDNN on :8200, skill installed (always-on) |
+| **Personal RAG** | ChromaDB + nomic-embed-text + qwen3:4b on :8300, skill installed (always-on) |
+| **Ollama** | qwen3:4b + nomic-embed-text installed, used by Personal RAG |
 | **ClawHub skills** | liveavatar, ollama-local, heygen-avatar-lite, notion-api-skill, trello-api |
 
 ### In Progress
 
 | Item | Status | What's left |
 |------|--------|-------------|
-| **Ollama local models** | Installing | Pull models, configure as fallback sub-agent |
 | **Voice Auth enrollment** | Service running, no voiceprint | Send 5-10 voice notes to Moltbot |
+| **Fine-tuning data** | 67 pairs extracted (need 200-500+) | Accumulate conversations, run `scripts/extract-training-data.py --stats-only` weekly |
 
 ### Pending (manual setup required)
 
@@ -238,6 +241,52 @@ SpeechBrain 1.0.x requires `torch<2.7`, `torchaudio<2.7`, and `huggingface-hub<0
 
 ---
 
+## Personal RAG (Local Knowledge)
+
+Local knowledge base that indexes OpenClaw conversations and memory into ChromaDB, answers personal questions using Ollama qwen3:4b. Zero cloud cost — fully local inference.
+
+| Item | Value |
+|------|-------|
+| **Location** | `configs/personal-rag/` |
+| **Service** | `systemctl --user {status,restart,stop} personal-rag` |
+| **Port** | 8300 (localhost only) |
+| **Embedding model** | Ollama nomic-embed-text (768d) |
+| **Chat model** | Ollama qwen3:4b |
+| **Vector store** | ChromaDB at `~/.openclaw/personal-rag/chromadb/` |
+| **Skill** | `~/.openclaw/workspace/skills/personal-knowledge/SKILL.md` (always-on) |
+| **Setup** | `./scripts/setup-personal-rag.sh` |
+| **Plan** | `docs/local-learning-implementation-plan.md` |
+
+### How it works
+
+1. OpenClaw's cloud LLM (Sonnet) sees the `personal-knowledge` skill (always loaded)
+2. For personal/routine questions, it calls `curl http://localhost:8300/query`
+3. RAG service embeds the query locally, searches ChromaDB, generates answer with qwen3:4b
+4. Cloud LLM uses the local answer directly or augments it
+
+### Quick commands
+
+```bash
+# Health check
+curl http://localhost:8300/health
+
+# Query personal knowledge
+curl -s -X POST http://localhost:8300/query -H "Content-Type: application/json" \
+  -d '{"query": "What is Arnaldo working on?"}'
+
+# Re-sync from OpenClaw conversations
+curl -s -X POST http://localhost:8300/sync
+
+# Check training data stats (for future fine-tuning)
+python3 scripts/extract-training-data.py --stats-only
+```
+
+### Future: Fine-tuning
+
+Once 200-500+ conversation pairs accumulate, fine-tune qwen3:4b on Colab (free T4) using Unsloth QLoRA. See `docs/local-learning-implementation-plan.md` Phase 5.
+
+---
+
 ## Google Calendar (gog CLI)
 
 Multi-calendar management via `gog` CLI (gogcli). Manages personal, shared, family, and subscribed calendars through a single Google OAuth login. Includes proactive morning briefings and meeting reminders via cron jobs.
@@ -278,6 +327,7 @@ Multi-calendar management via `gog` CLI (gogcli). Manages personal, shared, fami
 | Cost optimization | `guides/cost-optimization.md` | Gemini Flash, Ollama, OAuth strategies |
 | Google Calendar setup | `guides/gog-calendar-setup.md` | gog CLI OAuth + cron setup |
 | Voice auth setup | `guides/voice-auth-setup.md` | SpeechBrain enrollment + API reference |
+| Local learning plan | `docs/local-learning-implementation-plan.md` | RAG + fine-tuning roadmap |
 
 ---
 
