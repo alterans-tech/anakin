@@ -12,6 +12,59 @@ Anakin provides setup guides, configuration scripts, and automation for deployin
 
 ---
 
+## Status Overview
+
+### Running Services
+
+| Service | Port | Status | systemd unit |
+|---------|------|--------|-------------|
+| **OpenClaw Gateway** | 18789 | Running | `openclaw-gateway.service` |
+| **AIAvatarKit** | 8100 | Running | `aiavatarkit` |
+| **Voice Auth** | 8200 | Running (0 speakers enrolled) | `voice-auth` |
+| **Voice-call Plugin** | 3334 | Running (needs Twilio/Telnyx for calls) | via OpenClaw |
+
+### Done
+
+| Component | Details |
+|-----------|---------|
+| **OpenClaw Gateway** | v2026.2.6-3, Telegram bot `@anakin_moltbot` |
+| **Primary model** | Claude Sonnet 4.5 (cost-optimized from Opus) |
+| **Fallback chain** | Sonnet → GPT-4o → Gemini → Haiku |
+| **Heartbeat** | gpt-4o-mini (cheapest) |
+| **Sub-agents** | Claude Haiku 4.5 |
+| **TTS** | OpenAI gpt-4o-mini-tts, voice `echo`, auto=off (on-demand) |
+| **STT** | gpt-4o-mini-transcribe (~3.2s per voice note) |
+| **Memory plugin** | OpenAI text-embedding-3-small for vectors |
+| **TTS /tmp/ patch** | `isValidMedia()` patched, script: `scripts/patch-openclaw-tts.sh` |
+| **Rate limit tuning** | contextTokens: 80k, maxConcurrent: 2, cache-ttl pruning |
+| **IPv6 DNS fix** | `NODE_OPTIONS=--dns-result-order=ipv4first` in systemd env |
+| **AIAvatarKit** | Browser avatar on :8100, Claude + OpenAI TTS/STT + Silero VAD |
+| **Voice Auth service** | SpeechBrain ECAPA-TDNN on :8200, skill installed (always-on) |
+| **ClawHub skills** | liveavatar, ollama-local, heygen-avatar-lite, notion-api-skill, trello-api |
+
+### In Progress
+
+| Item | Status | What's left |
+|------|--------|-------------|
+| **Ollama local models** | Installing | Pull models, configure as fallback sub-agent |
+| **Voice Auth enrollment** | Service running, no voiceprint | Send 5-10 voice notes to Moltbot |
+
+### Pending (manual setup required)
+
+| Item | Effort | Guide / Reference |
+|------|--------|-------------------|
+| **WhatsApp QR pairing** | 5 min | `openclaw channels login` — scan QR |
+| **LiveAvatar API key** | 2 min | Get free key from app.liveavatar.com |
+| **Google Calendar (gog)** | 15 min | `guides/gog-calendar-setup.md` — OAuth flow, install binary, env vars |
+| **OpenHue (Hue lights)** | 10 min | Docker + bridge button press |
+| **LG ThinQ AC** | 10 min | PAT token + thinqconnect-mcp |
+| **Notion integration** | 5 min | Create integration, share pages, add API key |
+| **Trello integration** | 5 min | Get API key + token from trello.com/app-key |
+| **Google Gemini API key** | 2 min | aistudio.google.com/apikey — free tier fallback |
+| **Twilio/Telnyx for voice calls** | 15 min | Voice-call plugin running, needs telephony provider |
+
+---
+
 ## Jira
 
 | Key | Value |
@@ -41,29 +94,19 @@ anakin/
 ## Quick Commands
 
 ```bash
-# Run setup script (when available)
-./scripts/setup.sh
+# Service management
+systemctl --user {status,restart,stop} openclaw-gateway
+systemctl --user {status,restart,stop} aiavatarkit
+systemctl --user {status,restart,stop} voice-auth
 
-# Check system requirements
-./scripts/check-requirements.sh
-
-# Start AIAvatarKit (avatar chat UI)
+# Start AIAvatarKit (manual)
 ./scripts/start-avatar.sh
-```
 
----
+# Start Voice Auth (manual)
+./scripts/start-voice-auth.sh
 
-## Development
-
-```bash
-# Install dependencies (if any)
-npm install
-
-# Run tests
-npm test
-
-# Lint
-npm run lint
+# Voice Auth health check
+curl http://localhost:8200/health
 ```
 
 ---
@@ -218,6 +261,23 @@ Multi-calendar management via `gog` CLI (gogcli). Manages personal, shared, fami
 | API cost optimization | `guides/cost-optimization.md` | Gemini Flash primary, Ollama local fallback, OAuth for Claude Code |
 
 **Do not use** `adaptive` or `aggressive` for `contextPruning.mode` — only `off` or `cache-ttl` are valid (others crash the gateway).
+
+---
+
+## Guides & Docs Reference
+
+| Document | Path | Purpose |
+|----------|------|---------|
+| Enhancement plan (master) | `docs/openclaw-enhancement-plan.md` | Full roadmap with all pending setup steps |
+| Voice recognition research | `docs/voice-recognition-research.md` | Speaker ID research (SpeechBrain deployed) |
+| Complete research summary | `guides/openclaw-complete-research-summary.md` | OpenClaw overview + 700+ skills catalog |
+| Linux installation guide | `guides/detailed-linux-installation-guide.md` | Ubuntu install from scratch |
+| Windows migration plan | `guides/windows-to-linux-openclaw-migration-plan.md` | Migration reference (already on Linux) |
+| TTS patch guide | `guides/openclaw-tts-patch.md` | /tmp/ path fix for voice note delivery |
+| Rate limit tuning | `guides/openclaw-rate-limit-tuning.md` | Context pruning + concurrency settings |
+| Cost optimization | `guides/cost-optimization.md` | Gemini Flash, Ollama, OAuth strategies |
+| Google Calendar setup | `guides/gog-calendar-setup.md` | gog CLI OAuth + cron setup |
+| Voice auth setup | `guides/voice-auth-setup.md` | SpeechBrain enrollment + API reference |
 
 ---
 
