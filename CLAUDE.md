@@ -46,6 +46,9 @@ anakin/
 
 # Check system requirements
 ./scripts/check-requirements.sh
+
+# Start AIAvatarKit (avatar chat UI)
+./scripts/start-avatar.sh
 ```
 
 ---
@@ -116,6 +119,33 @@ systemctl --user restart openclaw-gateway.service
 | Patch | Script | Guide |
 |-------|--------|-------|
 | TTS voice note delivery (MEDIA: /tmp/ path fix) | `scripts/patch-openclaw-tts.sh` | `guides/openclaw-tts-patch.md` |
+
+---
+
+## AIAvatarKit (Avatar Chat)
+
+Local browser-based avatar with voice interaction, powered by Claude + OpenAI TTS/STT.
+
+| Item | Value |
+|------|-------|
+| **Location** | `configs/aiavatarkit/` |
+| **Web UI** | http://localhost:8100/static/index.html |
+| **Service** | `systemctl --user {status,restart,stop} aiavatarkit` |
+| **Port** | 8100 |
+| **LLM** | Claude Sonnet 4.5 (Anthropic API) |
+| **TTS** | OpenAI gpt-4o-mini-tts, voice "echo" |
+| **STT** | OpenAI Whisper |
+| **VAD** | Silero (local, CPU) |
+
+---
+
+## OpenClaw Config Tuning
+
+| Tuning | Guide | Key Settings |
+|--------|-------|-------------|
+| Rate limit & context optimization | `guides/openclaw-rate-limit-tuning.md` | `contextTokens: 80000`, `maxConcurrent: 2`, tighter pruning thresholds |
+
+**Do not use** `adaptive` or `aggressive` for `contextPruning.mode` — only `off` or `cache-ttl` are valid (others crash the gateway).
 
 ---
 

@@ -99,6 +99,14 @@ Mid-session switching: `/model opus` to escalate, `/model haiku` for simple task
 ### 10. Cleaned Up
 - Removed empty `/home/anakin/moltbot/` directory
 
+### 11. AIAvatarKit Installed (Local Avatar Chat)
+- Browser-based animated avatar with voice interaction
+- Claude Sonnet 4.5 as LLM, OpenAI Whisper for STT, gpt-4o-mini-tts for TTS
+- Silero VAD for local voice activity detection (runs on CPU)
+- Web UI at http://localhost:8100/static/index.html
+- Systemd service: `aiavatarkit.service`
+- Config: `configs/aiavatarkit/server.py` + `configs/aiavatarkit/.env`
+
 ---
 
 ## Local Model Training & Offline Learning
@@ -725,6 +733,56 @@ npx add-skill https://github.com/openclaw/openclaw/sherpa-onnx-tts
 
 ---
 
+## AIAvatarKit (Local Avatar Chat Interface)
+
+### What It Does
+Browser-based animated avatar that you talk to via microphone. The avatar lip-syncs responses spoken by Claude through OpenAI TTS. Full speech-to-speech loop:
+
+```
+Microphone → Silero VAD → OpenAI Whisper STT → Claude Sonnet → OpenAI TTS → Avatar lip-sync + audio
+```
+
+### Installation Details
+| Item | Value |
+|------|-------|
+| **Location** | `configs/aiavatarkit/` |
+| **Venv** | `configs/aiavatarkit/.venv/` (Python 3.12, uv) |
+| **Server** | `configs/aiavatarkit/server.py` |
+| **Env file** | `configs/aiavatarkit/.env` (API keys) |
+| **Web UI** | http://localhost:8100/static/index.html |
+| **MotionPNG Tuber** | http://localhost:8100/static/mpt.html |
+| **Admin** | http://localhost:8100/admin |
+| **Port** | 8100 |
+| **Service** | `systemctl --user` unit `aiavatarkit.service` |
+
+### Stack
+| Component | Provider | Model/Config |
+|-----------|----------|-------------|
+| LLM | Anthropic | claude-sonnet-4-5 |
+| STT | OpenAI | Whisper (via OpenAI API) |
+| TTS | OpenAI | gpt-4o-mini-tts, voice "echo" |
+| VAD | Silero | Local (torch, CPU) |
+| Avatar | AIAvatarKit | Animated character + lip sync |
+
+### Service Management
+```bash
+systemctl --user status aiavatarkit     # Check status
+systemctl --user restart aiavatarkit    # Restart
+systemctl --user enable aiavatarkit     # Auto-start on login
+systemctl --user stop aiavatarkit       # Stop
+```
+
+### Manual Start (alternative)
+```bash
+./scripts/start-avatar.sh
+```
+
+### Dependencies Installed
+- `aiavatar==0.8.6`, `torch==2.10.0`, `fastapi`, `uvicorn`, `websockets`, `anthropic`
+- System packages needed: `build-essential`, `portaudio19-dev`, `python3.12-dev`, `python3.12-venv`
+
+---
+
 ## Current System Status
 
 ```
@@ -732,9 +790,10 @@ Gateway:       v2026.2.6-3, running, ws://127.0.0.1:18789
 Primary Model: claude-sonnet-4-5 (1000k context)
 Heartbeat:     gpt-4o-mini every 30m
 Sub-agents:    claude-haiku-4-5 (max 8 concurrent)
-TTS:           Edge TTS (free) - en-US-GuyNeural
+TTS:           OpenAI gpt-4o-mini-tts, voice "echo"
 STT:           gpt-4o-mini-transcribe (~3.2s per voice note)
 Voice-call:    Running on :3334
+Avatar:        AIAvatarKit on :8100 (Claude + OpenAI TTS)
 Telegram:      ON, OK (@anakin_moltbot)
 WhatsApp:      ON, WARN (needs QR pairing)
 Memory:        Vector + FTS ready
