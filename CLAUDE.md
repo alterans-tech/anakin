@@ -48,6 +48,7 @@ Anakin provides setup guides, configuration scripts, and automation for deployin
 | **Fine-tune notebook** | `configs/personal-rag/finetune_qwen3_4b.ipynb` (Colab-ready) |
 | **Calendar cron scripts** | `scripts/calendar-{morning-briefing,meeting-reminder,weekly-review}.sh` (ready, needs gog) |
 | **Training data** | 71 pairs exported (12 preference-filtered), need 200+ for fine-tuning |
+| **Claude Code skill** | `claude -p` via Max subscription (Opus default), zero API cost, skill installed (always-on) |
 | **ClawHub skills** | liveavatar, ollama-local, heygen-avatar-lite, notion-api-skill, trello-api |
 
 ### In Progress
@@ -321,6 +322,43 @@ python3 scripts/extract-training-data.py --stats-only
 5. Update `personal-rag.service` → `CHAT_MODEL=anakin-personal`, restart
 
 Current stats: 71 total pairs, 12 preference-filtered. See `docs/local-learning-implementation-plan.md`.
+
+---
+
+## Claude Code Integration
+
+OpenClaw can delegate coding tasks to Claude Code via `claude -p` (headless mode). Uses your Max subscription (OAuth) — **zero API cost**.
+
+| Item | Value |
+|------|-------|
+| **Location** | `configs/claude-code/` |
+| **Skill** | `~/.openclaw/workspace/skills/claude-code/SKILL.md` (always-on) |
+| **Script** | `scripts/claude-code-task.sh` |
+| **Auth** | OAuth (Max subscription), NOT API key |
+| **Default model** | Opus 4.6 |
+| **Rate limits** | Shared with claude.ai web (5-hour rolling window) |
+
+### Quick commands
+
+```bash
+# Run a coding task
+./scripts/claude-code-task.sh "Fix the bug in auth.py" ~/project
+
+# Use Sonnet (lighter on rate limits)
+MODEL=sonnet ./scripts/claude-code-task.sh "Simple task" ~/project
+
+# Resume a session
+SESSION=abc-123 ./scripts/claude-code-task.sh "Continue work" ~/project
+
+# More turns for big tasks
+MAX_TURNS=50 ./scripts/claude-code-task.sh "Large refactor" ~/project
+```
+
+### Important
+
+- `ANTHROPIC_API_KEY` must NOT be set — the script unsets it so OAuth is used
+- Rate limits are shared with claude.ai web usage
+- Session IDs allow multi-turn workflows across Telegram conversations
 
 ---
 
