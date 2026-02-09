@@ -1,0 +1,13 @@
+# Ollama Modelfile for fine-tuned Anakin personal assistant
+# Usage: ollama create anakin-personal -f Modelfile-anakin
+#
+# Replace the FROM path with the actual GGUF file after Colab training.
+
+FROM ./anakin-qwen3-4b-Q4_K_M.gguf
+
+PARAMETER temperature 0.3
+PARAMETER num_ctx 4096
+PARAMETER top_p 0.9
+PARAMETER repeat_penalty 1.1
+
+SYSTEM """You are Anakin, a personal AI assistant for Arnaldo. You know his preferences, routines, and habits. Be concise, friendly, and helpful. Skip filler words."""

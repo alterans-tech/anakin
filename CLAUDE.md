@@ -23,6 +23,7 @@ Anakin provides setup guides, configuration scripts, and automation for deployin
 | **Voice Auth** | 8200 | Running (0 speakers enrolled) | `voice-auth` |
 | **Personal RAG** | 8300 | Running (78 docs indexed) | `personal-rag` |
 | **Voice-call Plugin** | 3334 | Running (needs Twilio/Telnyx for calls) | via OpenClaw |
+| **Docker** | - | Installed (user in docker group) | `docker.service` |
 
 ### Done
 
@@ -43,6 +44,10 @@ Anakin provides setup guides, configuration scripts, and automation for deployin
 | **Voice Auth service** | SpeechBrain ECAPA-TDNN on :8200, skill installed (always-on) |
 | **Personal RAG** | ChromaDB + nomic-embed-text + qwen3:4b on :8300, skill installed (always-on) |
 | **Ollama** | qwen3:4b + nomic-embed-text installed, used by Personal RAG |
+| **System packages** | tmux 3.4, ripgrep 14.1, sox, v4l2loopback, docker 28.2 |
+| **Fine-tune notebook** | `configs/personal-rag/finetune_qwen3_4b.ipynb` (Colab-ready) |
+| **Calendar cron scripts** | `scripts/calendar-{morning-briefing,meeting-reminder,weekly-review}.sh` (ready, needs gog) |
+| **Training data** | 71 pairs exported (12 preference-filtered), need 200+ for fine-tuning |
 | **ClawHub skills** | liveavatar, ollama-local, heygen-avatar-lite, notion-api-skill, trello-api |
 
 ### In Progress
@@ -50,20 +55,21 @@ Anakin provides setup guides, configuration scripts, and automation for deployin
 | Item | Status | What's left |
 |------|--------|-------------|
 | **Voice Auth enrollment** | Service running, no voiceprint | Send 5-10 voice notes to Moltbot |
-| **Fine-tuning data** | 67 pairs extracted (need 200-500+) | Accumulate conversations, run `scripts/extract-training-data.py --stats-only` weekly |
+| **Fine-tuning data** | 71 pairs extracted (need 200-500+) | Accumulate conversations, run `scripts/extract-training-data.py --stats-only` weekly |
 
 ### Pending (manual setup required)
 
 | Item | Effort | Guide / Reference |
 |------|--------|-------------------|
+| **Voice Auth enrollment** | 5 min | Send 5-10 voice notes to `@anakin_moltbot` on Telegram |
 | **WhatsApp QR pairing** | 5 min | `openclaw channels login` — scan QR |
+| **Google Calendar (gog)** | 15 min | `guides/gog-calendar-setup.md` — OAuth flow, install binary, env vars. Cron scripts ready at `scripts/calendar-*.sh` |
+| **Google Gemini API key** | 2 min | aistudio.google.com/apikey — free tier fallback |
 | **LiveAvatar API key** | 2 min | Get free key from app.liveavatar.com |
-| **Google Calendar (gog)** | 15 min | `guides/gog-calendar-setup.md` — OAuth flow, install binary, env vars |
-| **OpenHue (Hue lights)** | 10 min | Docker + bridge button press |
+| **OpenHue (Hue lights)** | 10 min | `docker pull openhue/cli` + bridge button press |
 | **LG ThinQ AC** | 10 min | PAT token + thinqconnect-mcp |
 | **Notion integration** | 5 min | Create integration, share pages, add API key |
 | **Trello integration** | 5 min | Get API key + token from trello.com/app-key |
-| **Google Gemini API key** | 2 min | aistudio.google.com/apikey — free tier fallback |
 | **Twilio/Telnyx for voice calls** | 15 min | Voice-call plugin running, needs telephony provider |
 
 ---
@@ -101,15 +107,20 @@ anakin/
 systemctl --user {status,restart,stop} openclaw-gateway
 systemctl --user {status,restart,stop} aiavatarkit
 systemctl --user {status,restart,stop} voice-auth
+systemctl --user {status,restart,stop} personal-rag
 
-# Start AIAvatarKit (manual)
+# Health checks
+curl http://localhost:8200/health   # Voice Auth
+curl http://localhost:8300/health   # Personal RAG
+
+# RAG operations
+curl -s -X POST http://localhost:8300/sync  # Re-sync knowledge base
+python3 scripts/extract-training-data.py --stats-only  # Training data stats
+
+# Manual start scripts
 ./scripts/start-avatar.sh
-
-# Start Voice Auth (manual)
 ./scripts/start-voice-auth.sh
-
-# Voice Auth health check
-curl http://localhost:8200/health
+./scripts/start-personal-rag.sh
 ```
 
 ---
@@ -281,9 +292,15 @@ curl -s -X POST http://localhost:8300/sync
 python3 scripts/extract-training-data.py --stats-only
 ```
 
-### Future: Fine-tuning
+### Fine-tuning (when 200+ pairs accumulated)
 
-Once 200-500+ conversation pairs accumulate, fine-tune qwen3:4b on Colab (free T4) using Unsloth QLoRA. See `docs/local-learning-implementation-plan.md` Phase 5.
+1. Re-export data: `python3 scripts/extract-training-data.py --filter-preferences --include-memory -o configs/personal-rag/training-data.jsonl`
+2. Open `configs/personal-rag/finetune_qwen3_4b.ipynb` in Google Colab (free T4)
+3. Upload the JSONL, run all cells, download the GGUF
+4. Import: `ollama create anakin-personal -f configs/personal-rag/Modelfile-anakin`
+5. Update `personal-rag.service` → `CHAT_MODEL=anakin-personal`, restart
+
+Current stats: 71 total pairs, 12 preference-filtered. See `docs/local-learning-implementation-plan.md`.
 
 ---
 

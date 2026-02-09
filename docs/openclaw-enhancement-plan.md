@@ -595,25 +595,9 @@ Google Calendar (hub)
 
 These require your interaction. Do them when you're back.
 
-### Priority 1: System Packages (needs sudo password)
+### Priority 1: System Packages ~~(needs sudo password)~~ DONE
 
-```bash
-sudo apt-get update && sudo apt-get install -y \
-  ffmpeg \
-  tmux \
-  ripgrep \
-  sox \
-  v4l2loopback-dkms \
-  v4l2loopback-utils \
-  python3-pip \
-  docker.io
-```
-
-After installing, add yourself to docker group:
-```bash
-sudo usermod -aG docker $USER
-# Log out and back in for group to take effect
-```
+All packages installed: ffmpeg, tmux 3.4, ripgrep 14.1, sox, v4l2loopback-dkms, v4l2loopback-utils, docker.io 28.2. User added to docker group (log out and back in to activate).
 
 ### Priority 2: WhatsApp QR Pairing
 
@@ -625,15 +609,9 @@ openclaw channels login
 # Scan the QR code
 ```
 
-### Priority 3: Ollama Installation
+### Priority 3: Ollama Installation — DONE
 
-```bash
-curl -fsSL https://ollama.ai/install.sh | sh
-ollama pull qwen3:4b
-ollama pull nomic-embed-text
-```
-
-Verify with: `ollama list`
+Ollama installed with qwen3:4b + nomic-embed-text. Used by Personal RAG service on :8300.
 
 ### Priority 4: LiveAvatar API Key
 
