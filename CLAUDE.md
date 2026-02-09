@@ -161,6 +161,21 @@ python3 scripts/extract-training-data.py --stats-only  # Training data stats
 
 ---
 
+## Remote Access
+
+SSH access to the Anakin machine (only needed when executing from Mac):
+
+```bash
+ssh anakin@192.168.0.30
+# Password: YouUnderEstimateMyP0w3r$$
+```
+
+When executing directly on Anakin, use commands locally without SSH.
+
+Claude Code is installed on Anakin and can be used directly via SSH session.
+
+---
+
 ## Related Projects
 
 | Project | Path | Relationship |
