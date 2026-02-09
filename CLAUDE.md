@@ -6,6 +6,12 @@ Personal AI assistant orchestration project - OpenClaw setup and configuration g
 
 ---
 
+## Project Rules
+
+@.claude/rules/assistant-orchestration.md
+
+---
+
 ## Project Overview
 
 Anakin provides setup guides, configuration scripts, and automation for deploying personal AI assistants (OpenClaw/Moltbot) on Linux systems.

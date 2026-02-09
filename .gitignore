@@ -11,6 +11,9 @@ node_modules/
 .venv/
 __pycache__/
 
+# Claude Code local preferences
+CLAUDE.local.md
+
 # Build
 dist/
 build/
