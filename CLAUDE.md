@@ -63,7 +63,7 @@ Anakin provides setup guides, configuration scripts, and automation for deployin
 |------|--------|-------------------|
 | **Voice Auth enrollment** | 5 min | Send 5-10 voice notes to `@anakin_moltbot` on Telegram |
 | **WhatsApp QR pairing** | 5 min | `openclaw channels login` — scan QR |
-| **Google Calendar (gog)** | 15 min | `guides/gog-calendar-setup.md` — OAuth flow, install binary, env vars. Cron scripts ready at `scripts/calendar-*.sh` |
+| **Google Calendar (gog)** | 10 min | gog + gcloud installed. Next: `gcloud auth login --no-browser` (paste code back), then Claude scripts the rest. See `guides/gog-calendar-setup.md` |
 | **Google Gemini API key** | 2 min | aistudio.google.com/apikey — free tier fallback |
 | **LiveAvatar API key** | 2 min | Get free key from app.liveavatar.com |
 | **OpenHue (Hue lights)** | 10 min | `docker pull openhue/cli` + bridge button press |
@@ -92,10 +92,30 @@ Use Jira MCP tools to manage tasks:
 
 ```
 anakin/
-├── guides/              # Step-by-step installation guides
-├── scripts/             # Automation scripts
-├── configs/             # Configuration templates
-└── docs/                # Additional documentation
+├── guides/                     # Step-by-step installation guides
+│   ├── voice-auth-setup.md     # SpeechBrain enrollment + API reference
+│   ├── cost-optimization.md    # Gemini, Ollama, OAuth cost strategies
+│   ├── gog-calendar-setup.md   # Google Calendar OAuth + cron
+│   ├── openclaw-tts-patch.md   # TTS /tmp/ path fix
+│   └── openclaw-rate-limit-tuning.md
+├── scripts/                    # Automation & setup scripts
+│   ├── setup-voice-auth.sh     # One-time voice auth installer
+│   ├── setup-personal-rag.sh   # One-time RAG service installer
+│   ├── patch-openclaw-tts.sh   # TTS patch (re-run after OpenClaw updates)
+│   ├── extract-training-data.py # Export Q&A pairs for fine-tuning
+│   ├── calendar-*.sh           # Cron job scripts (ready, needs gog setup)
+│   └── start-*.sh              # Manual start scripts for services
+├── configs/                    # Service configurations
+│   ├── aiavatarkit/            # Avatar chat UI (:8100)
+│   ├── voice-auth/             # Speaker verification (:8200)
+│   └── personal-rag/           # Local RAG + fine-tuning (:8300)
+│       ├── rag_service.py
+│       ├── finetune_qwen3_4b.ipynb  # Colab notebook (Unsloth QLoRA)
+│       └── Modelfile-anakin         # Ollama GGUF import template
+└── docs/                       # Reference documentation
+    ├── openclaw-enhancement-plan.md  # Master roadmap (source of truth)
+    ├── local-learning-implementation-plan.md
+    └── voice-recognition-research.md
 ```
 
 ---
@@ -310,12 +330,14 @@ Multi-calendar management via `gog` CLI (gogcli). Manages personal, shared, fami
 
 | Item | Value |
 |------|-------|
-| **Binary** | `/usr/local/bin/gog` (v0.9.0) |
+| **Binary** | `~/.local/bin/gog` (v0.9.0) — installed |
+| **gcloud CLI** | `~/google-cloud-sdk/bin/gcloud` (v555.0.0) — installed, needs auth |
 | **Config** | `~/.config/gogcli/config.json` |
 | **Bundled skill** | `gog` (OpenClaw built-in) |
-| **ClawHub skill** | `gog-calendar` v1.0.0 (calendar-specific optimizations) |
+| **ClawHub skill** | `gog-calendar` v1.0.0 (not yet installed) |
 | **Guide** | `guides/gog-calendar-setup.md` |
-| **Env vars** | `GOG_ACCOUNT`, `GOG_KEYRING_PASSWORD` (in systemd unit) |
+| **Env vars** | `GOG_ACCOUNT`, `GOG_KEYRING_PASSWORD` (not yet in systemd unit) |
+| **Status** | gog + gcloud binaries installed. Pending: gcloud auth → GCP project → OAuth creds → gog auth → env vars → ClawHub skill → cron jobs |
 
 ---
 

@@ -1,7 +1,7 @@
 # OpenClaw Enhancement Plan
 
 > **This document persists across sessions.** Re-read after every compaction.
-> Last updated: 2026-02-08
+> Last updated: 2026-02-08 (session 2)
 
 ---
 
@@ -107,6 +107,47 @@ Mid-session switching: `/model opus` to escalate, `/model haiku` for simple task
 - Web UI at http://localhost:8100/static/index.html
 - Systemd service: `aiavatarkit.service`
 - Config: `configs/aiavatarkit/server.py` + `configs/aiavatarkit/.env`
+
+### 12. Voice Authentication Service
+- SpeechBrain ECAPA-TDNN (0.80% EER) running as FastAPI on :8200
+- Gates admin operations (credentials, config, sudo) behind voice verification
+- Session-based: 2h expiry, fail-closed when service down
+- Text-only admin requests always denied
+- Systemd service: `voice-auth.service`
+- OpenClaw skill: `voice-auth` (always-on)
+- **Status**: Running, 0 speakers enrolled (needs 5-10 voice note samples)
+- Deps pinned: `torch<2.7`, `torchaudio<2.7`, `huggingface-hub<0.26`
+
+### 13. Ollama Local Models
+- Ollama installed with `qwen3:4b` (2.5GB) and `nomic-embed-text` (274MB, 768d)
+- CPU-only inference (MX230 too small for GPU offload)
+- Cold start: 30-60s first inference, subsequent queries ~5-15s
+- Used by Personal RAG service for embedding + chat
+
+### 14. Personal RAG Service (Local Knowledge)
+- ChromaDB + Ollama nomic-embed-text + qwen3:4b on :8300
+- 78 documents indexed from OpenClaw memory + session logs
+- Endpoints: `/query`, `/search`, `/ingest`, `/sync`, `/classify`, `/stats`, `/health`
+- OpenClaw skill: `personal-knowledge` (always-on) — cloud LLM queries local RAG for personal questions
+- httpx timeout: 300s (Ollama CPU cold start)
+- Systemd service: `personal-rag.service`
+
+### 15. System Packages Installed
+- ffmpeg, tmux 3.4, ripgrep 14.1, sox, v4l2loopback-dkms, v4l2loopback-utils, docker.io 28.2
+- User `anakin` added to `docker` group (needs logout/login to activate)
+- v4l2loopback kernel module built for 6.17.0-14-generic
+
+### 16. Fine-Tuning Pipeline Prepared
+- Training data extractor: `scripts/extract-training-data.py` (71 total pairs, 12 preference-filtered)
+- Colab notebook: `configs/personal-rag/finetune_qwen3_4b.ipynb` (Unsloth QLoRA, free T4)
+- Modelfile template: `configs/personal-rag/Modelfile-anakin` (for Ollama GGUF import)
+- **Status**: Need 200-500+ pairs before first training run
+
+### 17. Calendar Cron Scripts Prepared
+- `scripts/calendar-morning-briefing.sh` — daily 7 AM agenda summary via Telegram
+- `scripts/calendar-meeting-reminder.sh` — every 15 min, alerts 15 min before meetings
+- `scripts/calendar-weekly-review.sh` — Sunday 8 PM week-ahead overview
+- **Status**: Scripts ready, waiting for gog CLI OAuth setup
 
 ---
 
@@ -571,7 +612,7 @@ Google Calendar (hub)
 | Skill | Source | Setup Required |
 |-------|--------|---------------|
 | liveavatar | ClawHub | LiveAvatar API key (free) |
-| ollama-local | ClawHub | Ollama installed locally |
+| ollama-local | ClawHub | **Ready** (Ollama installed with qwen3:4b) |
 | heygen-avatar-lite | ClawHub | HeyGen API key |
 | notion-api-skill | ClawHub | Notion integration token |
 | trello-api | ClawHub | Trello API key + token |
@@ -582,7 +623,7 @@ Google Calendar (hub)
 | openhue | `openhue` CLI | Docker or Homebrew install + bridge button |
 | gog | `gog` CLI | Binary install + Google OAuth |
 | notion | `NOTION_API_KEY` env | Create integration at notion.so |
-| tmux | `tmux` binary | `sudo apt install tmux` |
+| tmux | `tmux` binary | **Installed** (tmux 3.4) |
 | session-logs | `jq` binary | Already installed |
 | openai-image-gen | `OPENAI_API_KEY` | Already set in systemd env |
 | openai-whisper-api | `OPENAI_API_KEY` | Already set in systemd env |
@@ -595,9 +636,18 @@ Google Calendar (hub)
 
 These require your interaction. Do them when you're back.
 
-### Priority 1: System Packages ~~(needs sudo password)~~ DONE
+### ~~Priority 1: System Packages~~ DONE
 
-All packages installed: ffmpeg, tmux 3.4, ripgrep 14.1, sox, v4l2loopback-dkms, v4l2loopback-utils, docker.io 28.2. User added to docker group (log out and back in to activate).
+All packages installed: ffmpeg, tmux 3.4, ripgrep 14.1, sox, v4l2loopback-dkms, v4l2loopback-utils, docker.io 28.2. User added to docker group. **Log out and back in to activate docker group.**
+
+### Priority 1: Voice Auth Enrollment (5 min)
+
+Send 5-10 voice notes to `@anakin_moltbot` on Telegram. Each will be enrolled automatically by the voice-auth skill. Until enrolled, all admin operations (credentials, config, sudo) are blocked.
+
+```bash
+# Check enrollment status
+curl http://localhost:8200/speakers
+```
 
 ### Priority 2: WhatsApp QR Pairing
 
@@ -609,24 +659,36 @@ openclaw channels login
 # Scan the QR code
 ```
 
-### Priority 3: Ollama Installation — DONE
+### ~~Priority 3: Ollama Installation~~ DONE
 
 Ollama installed with qwen3:4b + nomic-embed-text. Used by Personal RAG service on :8300.
 
-### Priority 4: LiveAvatar API Key
+### Priority 3: Google Gemini API Key (2 min)
+
+Unlocks the Gemini fallback in the model chain (Sonnet → GPT-4o → **Gemini 2.5 Flash** → Haiku).
+
+1. Go to https://aistudio.google.com/apikey
+2. Create API key (free tier: 15 RPM, 1M TPM)
+3. Add to OpenClaw:
+   ```bash
+   # Option A: Set env var in systemd unit
+   # Add to ~/.config/systemd/user/openclaw-gateway.service [Service] section:
+   Environment=GEMINI_API_KEY=your_key_here
+
+   # Option B: Auth profiles
+   openclaw models auth login --provider google-gemini-cli
+   ```
+4. Restart: `systemctl --user daemon-reload && systemctl --user restart openclaw-gateway`
+
+### Priority 4: LiveAvatar API Key (2 min)
 
 1. Go to https://app.liveavatar.com
-2. Create free account
-3. Copy API key
-4. Add to config:
-   ```bash
-   # Edit ~/.openclaw/openclaw.json
-   # Under skills.entries, add:
-   "liveavatar": {
-     "env": { "LIVEAVATAR_API_KEY": "your_key" }
-   }
+2. Create free account, copy API key
+3. Add to `~/.openclaw/openclaw.json` under `skills.entries`:
+   ```json
+   "liveavatar": { "env": { "LIVEAVATAR_API_KEY": "your_key" } }
    ```
-5. Restart gateway: `systemctl --user restart openclaw-gateway`
+4. Restart gateway: `systemctl --user restart openclaw-gateway`
 
 ### Priority 5: OpenHue CLI (Hue Lights)
 
@@ -643,34 +705,24 @@ openhue discover
 openhue setup
 ```
 
-### Priority 6: Google Calendar + Multi-Agenda (gog CLI)
+### Priority 6: Google Calendar + Multi-Agenda (gog CLI) — IN PROGRESS
 
 **Full guide**: `guides/gog-calendar-setup.md`
 
-```bash
-# 1. Download gog binary
-curl -sL https://github.com/steipete/gogcli/releases/download/v0.9.0/gogcli_0.9.0_linux_amd64.tar.gz | tar xz
-sudo mv gog /usr/local/bin/gog
+**Done**:
+- [x] gog binary installed at `~/.local/bin/gog` (v0.9.0)
+- [x] gcloud CLI installed at `~/google-cloud-sdk/bin/gcloud` (v555.0.0)
+- [x] `~/.config/gogcli/` directory created
+- [x] Calendar cron scripts ready at `scripts/calendar-*.sh`
 
-# 2. Create Google Cloud project → enable Calendar API → OAuth Desktop credentials
-#    See guides/gog-calendar-setup.md Steps 2-3 for detailed walkthrough
-
-# 3. Authenticate
-gog auth credentials ~/.config/gogcli/credentials.json
-gog auth add you@gmail.com --services calendar
-
-# 4. Add env vars to systemd unit
-#    GOG_ACCOUNT=you@gmail.com
-#    GOG_KEYRING_PASSWORD=your-password
-systemctl --user daemon-reload && systemctl --user restart openclaw-gateway
-
-# 5. Install calendar-optimized skill
-clawhub install gog-calendar
-systemctl --user restart openclaw-gateway
-
-# 6. Set up cron jobs (morning briefing, meeting reminders, weekly review)
-#    See guides/gog-calendar-setup.md Step 8 for exact commands
-```
+**Next** (requires one interactive step, then Claude scripts the rest):
+1. Authenticate gcloud: `gcloud auth login --no-browser` — visit the URL, paste the output back
+2. Claude creates GCP project + enables Calendar API + OAuth consent + Desktop credentials
+3. Claude runs `gog auth credentials` + `gog auth add`
+4. Claude adds `GOG_ACCOUNT` + `GOG_KEYRING_PASSWORD` to systemd env
+5. Claude installs `gog-calendar` from ClawHub
+6. Claude sets up cron jobs (morning briefing, meeting reminders, weekly review)
+7. Restart gateway
 
 After setup, share agendas with Anakin by sharing calendars with your Google account or subscribing to external ICS feeds in Google Calendar.
 
@@ -830,11 +882,16 @@ TTS:           OpenAI gpt-4o-mini-tts, voice "echo"
 STT:           gpt-4o-mini-transcribe (~3.2s per voice note)
 Voice-call:    Running on :3334
 Avatar:        AIAvatarKit on :8100 (Claude + OpenAI TTS)
+Voice Auth:    SpeechBrain ECAPA-TDNN on :8200 (0 speakers enrolled)
+Personal RAG:  ChromaDB + qwen3:4b on :8300 (78 docs indexed)
+Ollama:        qwen3:4b + nomic-embed-text (CPU inference)
+Docker:        28.2 installed (user in docker group)
 Telegram:      ON, OK (@anakin_moltbot)
 WhatsApp:      ON, WARN (needs QR pairing)
 Memory:        Vector + FTS ready
-Skills:        16/49 bundled ready + 5 ClawHub installed
+Skills:        16/49 bundled ready + 5 ClawHub + 2 custom (voice-auth, personal-knowledge)
 Errors:        Zero fetch errors (IPv4-first fix)
+Training data: 71 pairs (12 preference), need 200+ for fine-tuning
 ```
 
 ---

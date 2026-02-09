@@ -18,7 +18,7 @@ Download the pre-built Linux binary (no Homebrew needed):
 
 ```bash
 curl -sL https://github.com/steipete/gogcli/releases/download/v0.9.0/gogcli_0.9.0_linux_amd64.tar.gz | tar xz
-sudo mv gog /usr/local/bin/gog
+mv gog ~/.local/bin/gog
 gog --version
 ```
 
@@ -26,7 +26,7 @@ Verify:
 
 ```bash
 which gog
-# /usr/local/bin/gog
+# ~/.local/bin/gog (no sudo needed — already in PATH and OpenClaw systemd PATH)
 ```
 
 ---
@@ -349,7 +349,7 @@ GOG_KEYRING_PASSWORD="your-password" gog auth list --check
 
 | Item | Value |
 |------|-------|
-| gog binary | `/usr/local/bin/gog` |
+| gog binary | `~/.local/bin/gog` |
 | gog config | `~/.config/gogcli/config.json` |
 | gog credentials | `~/.config/gogcli/credentials.json` |
 | gog version | v0.9.0 |

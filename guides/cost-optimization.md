@@ -198,6 +198,31 @@ openclaw memory index
 
 ---
 
+## Personal RAG (Local Knowledge Offloading)
+
+**Status: Running on :8300** — 78 docs indexed, ChromaDB + nomic-embed-text + qwen3:4b
+
+The Personal RAG service offloads personal/routine queries to local Ollama inference, avoiding cloud API calls entirely. The `personal-knowledge` OpenClaw skill (always-on) instructs the cloud LLM to query `localhost:8300` for personal preferences, routines, and conversation history.
+
+### Cost Impact
+
+| Query Type | Before (cloud) | After (RAG) |
+|---|---|---|
+| "What's my morning routine?" | Sonnet ($3/$15 per M) | qwen3:4b ($0, local) |
+| "What am I working on?" | Sonnet ($3/$15 per M) | qwen3:4b ($0, local) |
+| "Do I like X?" | Sonnet ($3/$15 per M) | qwen3:4b ($0, local) |
+| Greetings / casual chat | Sonnet ($3/$15 per M) | qwen3:4b ($0, local) |
+
+Estimated savings: ~20-30% of Telegram bot API spend redirected to local model.
+
+### Sync Knowledge Base
+
+```bash
+curl -s -X POST http://localhost:8300/sync   # Re-index conversations
+```
+
+---
+
 ## Summary: Where Each Dollar Goes
 
 | Activity | Tool | Cost |
@@ -208,7 +233,9 @@ openclaw memory index
 | Web research | chatgpt.com browsing | $0 (Plus sub) |
 | Telegram bot (simple) | Gemini Flash | $0 (free tier) |
 | Telegram bot (complex) | Claude Haiku/Sonnet | ~$2-5/mo |
+| Telegram bot (personal) | Personal RAG + Ollama local | $0 |
 | Heartbeat | Gemini Flash Lite | $0 (free tier) |
 | Sub-agents | Ollama local | $0 |
 | Voice notes (STT) | OpenAI gpt-4o-mini-transcribe | ~$1-2/mo |
 | Voice replies (TTS) | OpenAI gpt-4o-mini-tts | ~$0.50-1/mo |
+| Voice auth | SpeechBrain local | $0 |
